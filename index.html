@@ -1,1 +1,225 @@
-
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Şekil Şukul</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#080914;--cyan:#00f5ff;--pink:#ff28d7;--purple:#8c52ff}
+body{margin:0;background:radial-gradient(ellipse at top,#191438,#080914 65%);color:#fff;font-family:Arial,sans-serif;min-height:100dvh;overflow:hidden;touch-action:manipulation}
+#app{height:100dvh;max-width:480px;margin:auto;display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom);gap:7px}
+header{width:100%;text-align:center;padding-top:5px}
+h1{margin:0;font-size:clamp(25px,7vw,36px);font-weight:1000;letter-spacing:2px;color:var(--cyan);text-shadow:0 0 8px var(--cyan),0 0 22px #008cff}
+.sub{font-size:10px;letter-spacing:4px;color:#c7b9ff;margin-top:3px}
+.stats{width:100%;display:flex;justify-content:space-between;gap:6px}
+.stat{flex:1;text-align:center;background:#111426;border:1px solid #39345d;border-radius:9px;padding:6px 2px}
+.stat small{display:block;font-size:10px;color:#b9b2d9;margin-bottom:3px}
+.stat strong{font-size:17px;color:var(--cyan)}
+#boardWrap{position:relative;border:2px solid #6e46ff;border-radius:5px;padding:3px;background:#070912;box-shadow:0 0 10px #6e46ff, inset 0 0 14px #251348;flex:0 1 auto;min-height:0}
+#board{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));grid-template-rows:repeat(20,minmax(0,1fr));width:min(82vw,350px,calc((100dvh - 290px)*.5));height:min(164vw,700px,calc(100dvh - 290px));aspect-ratio:1/2;gap:2px;touch-action:none}
+.cell{min-width:0;min-height:0;background:#111324;border:1px solid #20233b;border-radius:2px}
+.cell.filled{background:var(--c);border:2px solid var(--c);box-shadow:inset 0 0 3px #fff,0 0 5px var(--c);clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
+.cell.ghost{background:transparent;border:1px dashed var(--c);opacity:.45}
+#hint{font-size:11px;color:#c0b9de;text-align:center;min-height:14px}
+.controls{width:100%;display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:auto;padding-bottom:3px}
+.ctrl{height:clamp(44px,8vh,58px);border-radius:12px;border:1px solid #5142a0;background:#15142a;color:white;font-size:22px;font-weight:bold;box-shadow:0 0 8px #32205d;touch-action:none;user-select:none;-webkit-user-select:none}
+.ctrl:active{background:#34236b;border-color:var(--cyan)}
+.ctrl span{display:block;font-size:9px;font-weight:normal;color:#b9b4e7;margin-top:2px}
+#start{border-color:var(--cyan);color:var(--cyan);font-size:17px}
+#rotate{border-color:var(--pink)}
+#overlay{position:absolute;inset:0;background:#080914ed;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:18px;gap:12px;z-index:5}
+#overlay h2{font-size:27px;margin:0;color:var(--cyan);text-shadow:0 0 12px var(--cyan)}
+#overlay p{font-size:14px;line-height:1.5;color:#ddd8f4;margin:0}
+.action{background:linear-gradient(100deg,#4824b8,#0a9eac);border:1px solid var(--cyan);border-radius:10px;color:white;padding:13px 25px;font-size:17px;font-weight:bold;box-shadow:0 0 14px #4236ba}
+footer{font-size:9px;color:#77738f;padding:2px 0 5px}
+@media(max-height:650px){
+#app{gap:4px;padding-left:8px;padding-right:8px}
+header{padding-top:1px}
+h1{font-size:24px}
+.sub{font-size:8px}
+.stat{padding:3px 2px}
+.stat strong{font-size:14px}
+#board{width:min(66vw,calc((100dvh - 245px)*.5));height:min(132vw,calc(100dvh - 245px))}
+.controls{gap:5px}
+.ctrl{height:42px}
+#hint{font-size:10px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+<h1>ŞEKİL ŞUKUL</h1>
+<div class="sub">NEON BLOCK PUZZLE</div>
+</header>
+<div class="stats">
+<div class="stat"><small>PUAN</small><strong id="score">0</strong></div>
+<div class="stat"><small>SEVİYE</small><strong id="level">1</strong></div>
+<div class="stat"><small>SATIR</small><strong id="lines">0</strong></div>
+</div>
+<div id="boardWrap">
+<div id="board"></div>
+<div id="overlay">
+<h2 id="overlayTitle">ŞEKİL ŞUKUL</h2>
+<p id="overlayText">Blokları yerleştir, satırları tamamla!<br>Ne kadar çok satır, o kadar çok puan.</p>
+<button class="action" id="start">OYUNA BAŞLA</button>
+</div>
+</div>
+<div id="hint">Dokunarak veya aşağıdaki tuşlarla oyna.</div>
+<div class="controls">
+<button class="ctrl" id="left">◀<span>SOL</span></button>
+<button class="ctrl" id="right">▶<span>SAĞ</span></button>
+<button class="ctrl" id="rotate">↻<span>DÖNDÜR</span></button>
+<button class="ctrl" id="down">▼<span>HIZLI İN</span></button>
+<button class="ctrl" id="drop">⇊<span>ANINDA İN</span></button>
+</div>
+<footer>ŞEKİL ŞUKUL · KLASİK MOD</footer>
+</div>
+<script>
+(()=>{
+'use strict';
+const W=10,H=20;
+const colors=['#00f5ff','#ff28d7','#a76bff','#ffb52e','#39ff88','#ff4e65','#4d8dff'];
+const shapes=[
+[[1,1,1,1]],
+[[1,1],[1,1]],
+[[0,1,0],[1,1,1]],
+[[1,0,0],[1,1,1]],
+[[0,0,1],[1,1,1]],
+[[1,1,0],[0,1,1]],
+[[0,1,1],[1,1,0]]
+];
+const $=id=>document.getElementById(id);
+const boardEl=$('board'),overlay=$('overlay');
+let cells=[],grid,active,nextShape,score=0,lines=0,level=1;
+let running=false,over=false,last=0,acc=0,raf=0,holdTimer=null,holdAction=null;
+function makeBoard(){
+boardEl.innerHTML='';cells=[];
+for(let i=0;i<W*H;i++){let e=document.createElement('div');e.className='cell';boardEl.appendChild(e);cells.push(e)}
+}
+function emptyGrid(){return Array.from({length:H},()=>Array(W).fill(null))}
+function randomShape(){let s=shapes[Math.floor(Math.random()*shapes.length)];return {m:s.map(r=>r.slice()),c:colors[Math.floor(Math.random()*colors.length)]}}
+function spawn(){
+let s=nextShape||randomShape();nextShape=randomShape();
+active={m:s.m.map(r=>r.slice()),c:s.c,x:Math.floor((W-s.m[0].length)/2),y:0};
+if(!valid(active.x,active.y,active.m)){finish();return}
+draw();
+}
+function valid(x,y,m){
+for(let r=0;r<m.length;r++)for(let c=0;c<m[r].length;c++)if(m[r][c]){
+let xx=x+c,yy=y+r;
+if(xx<0||xx>=W||yy>=H)return false;
+if(yy>=0&&grid[yy][xx])return false;
+}
+return true;
+}
+function draw(){
+if(!active)return;
+let ghostY=active.y;
+while(valid(active.x,ghostY+1,active.m))ghostY++;
+for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+let e=cells[y*W+x],color=grid[y][x];
+let ar=y-active.y,ac=x-active.x;
+if(ar>=0&&ar<active.m.length&&ac>=0&&ac<active.m[ar].length&&active.m[ar][ac])color=active.c;
+e.className='cell';e.style.removeProperty('--c');
+if(color){e.classList.add('filled');e.style.setProperty('--c',color)}
+else if(y>=ghostY&&y<ghostY+active.m.length&&x>=active.x&&x<active.x+active.m[0].length&&active.m[y-ghostY]&&active.m[y-ghostY][x-active.x]){
+e.classList.add('ghost');e.style.setProperty('--c',active.c);
+}
+}
+$('score').textContent=score;
+$('level').textContent=level;
+$('lines').textContent=lines;
+}
+function move(dx,dy){
+if(!running||!active)return false;
+if(valid(active.x+dx,active.y+dy,active.m)){active.x+=dx;active.y+=dy;draw();return true}
+if(dy>0)lock();
+return false;
+}
+function rotate(){
+if(!running||!active)return;
+let m=active.m[0].map((_,i)=>active.m.map(row=>row[i]).reverse());
+for(let dx of [0,-1,1,-2,2])if(valid(active.x+dx,active.y,m)){active.x+=dx;active.m=m;draw();return}
+}
+function lock(){
+if(!active)return;
+for(let r=0;r<active.m.length;r++)for(let c=0;c<active.m[r].length;c++)if(active.m[r][c]){
+let y=active.y+r,x=active.x+c;
+if(y>=0&&y<H)grid[y][x]=active.c;
+}
+active=null;
+let cleared=0;
+for(let y=H-1;y>=0;){
+if(grid[y].every(Boolean)){grid.splice(y,1);grid.unshift(Array(W).fill(null));cleared++}
+else y++;
+}
+if(cleared){
+lines+=cleared;
+score+=([0,100,300,500,800][cleared]||800)*level;
+level=1+Math.floor(lines/10);
+$('hint').textContent=cleared+' satır temizlendi! Harika!';
+}else score+=10;
+spawn();
+}
+function finish(){
+running=false;over=true;active=null;stopHold();
+$('overlayTitle').textContent='OYUN BİTTİ';
+$('overlayText').innerHTML='Puanın: <b>'+score+'</b><br>Seviye: '+level+'<br>Tekrar denemeye hazır mısın?';
+$('start').textContent='TEKRAR OYNA';
+overlay.style.display='flex';
+draw();
+}
+function loop(t){
+if(!running)return;
+if(!last)last=t;
+let dt=Math.min(t-last,100);last=t;acc+=dt;
+let interval=Math.max(280,850-(level-1)*18);
+while(acc>=interval&&running){acc-=interval;move(0,1);interval=Math.max(280,850-(level-1)*18)}
+if(running)raf=requestAnimationFrame(loop);
+}
+function start(){
+stopHold();cancelAnimationFrame(raf);
+grid=emptyGrid();score=0;lines=0;level=1;active=null;nextShape=null;last=0;acc=0;over=false;running=true;
+$('hint').textContent='Satırları tamamla, seviyeni yükselt!';
+overlay.style.display='none';spawn();
+if(running)raf=requestAnimationFrame(loop);
+}
+function stopHold(){if(holdTimer){clearInterval(holdTimer);holdTimer=null}holdAction=null}
+function bindRepeat(id,action){
+const el=$(id);
+const begin=e=>{e.preventDefault();if(!running)return;stopHold();action();holdAction=action;holdTimer=setInterval(()=>{if(holdAction)holdAction()},95)};
+const end=e=>{if(e)e.preventDefault();stopHold()};
+el.addEventListener('pointerdown',begin);
+['pointerup','pointercancel','pointerleave'].forEach(ev=>el.addEventListener(ev,end));
+}
+$('start').addEventListener('click',start);
+bindRepeat('left',()=>move(-1,0));
+bindRepeat('right',()=>move(1,0));
+bindRepeat('down',()=>move(0,1));
+$('rotate').addEventListener('click',rotate);
+$('drop').addEventListener('click',()=>{
+if(!running||!active)return;
+let n=0;while(valid(active.x,active.y+1,active.m)){active.y++;n++}
+score+=n*2;lock();
+});
+boardEl.addEventListener('pointerdown',e=>{
+if(!running||!active)return;
+e.preventDefault();
+boardEl.setPointerCapture(e.pointerId);
+let rect=boardEl.getBoundingClientRect();
+let x=(e.clientX-rect.left)/rect.width;
+if(x<.33)move(-1,0);else if(x>.67)move(1,0);else rotate();
+});
+document.addEventListener('keydown',e=>{
+if(e.key==='ArrowLeft'){e.preventDefault();move(-1,0)}
+if(e.key==='ArrowRight'){e.preventDefault();move(1,0)}
+if(e.key==='ArrowDown'){e.preventDefault();move(0,1)}
+if(e.key==='ArrowUp'||e.key===' '){e.preventDefault();rotate()}
+});
+makeBoard();grid=emptyGrid();draw();
+})();
+</script>
+</body>
+</html>
